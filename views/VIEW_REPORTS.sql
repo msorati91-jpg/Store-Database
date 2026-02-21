@@ -1,0 +1,133 @@
+--USE [Store]
+--GO 
+--------------------REPORT_SumSale_per_supliers----------------------
+
+--ALTER VIEW Vw_SumSale_per_supliers
+--AS
+
+--		select s.Id,s.Name ,sum(fd.EndPrise) AS SumSale
+--		from  [Supliers] as s inner join [Products] as p
+--		on  s.Id=p.SuplierId
+--		inner join [FactorDitail] as fd
+--		on  p.Id=fd.ProductId
+--		group by s.Id,s.Name 
+-------------------REPORT_Monthly_sale-------------------------------
+--USE [Store]
+--GO 
+--CREATE VIEW Vw_Monthly_sale
+--AS
+    
+--    SELECT         YEAR  ( fh.RequareDate ) AS YEARS ,
+--                   MONTH ( fh.RequareDate ) AS MONTHS,
+--                   SUM   ( fd.EndPrise) AS SALE
+--    FROM            FactorDitail fd  INNER JOIN FactorHeader fh
+--    ON  fh.id=fd.FactorHeaderId 
+    
+--    GROUP BY     YEAR  ( fh.RequareDate )  ,  MONTH ( fh.RequareDate )  
+--    ORDER BY SALE DESC OFFSET 0 ROW
+
+-------------------------Report_salepercent_per_product---------------------------------
+--USE [Store]
+--GO
+--CREATE VIEW Vw_salepercent_per_product
+--AS
+--SELECT p.id,p.Name,CAST ( sum (fd.EndPrise )   /Totalsale *100  AS NUMERIC(18,2)) as salepercent 
+--from  Products AS P INNER JOIN FactorDitail as fd
+--on fd.ProductId=p.Id
+--inner join (select  SUM(EndPrise) AS Totalsale from FactorDitail  ) TotalsaleS
+--on 1=1
+--GROUP BY  p.Id,p.Name ,Totalsale
+--ORDER BY salepercent DESC OFFSET 0 ROW
+
+------------------------Report_All_Info------------------------------------------------------
+--USE [Store]
+--GO
+--ALTER VIEW Vw_All_Info
+--AS 
+--SELECT FH.Id,FH.Description,PE.PersonelCod,CONCAT(PE.FirstName,' ',PE.LastName),C.CostumerCod,CONCAT(C.FirstName,' ',C.LastName),
+--S.Name,S.Phone,P.Name,P.Description,CO.Name,CI.Name,PC.Name,PU.Name,FD.UnitPrice,FD.ProductINumber,FD.EndPrise C
+        
+--FROM FactorHeader AS FH 
+--INNER JOIN FactorDitail AS FD ON FH.Id=FD.FactorHeaderId
+--INNER JOIN Costumers AS C ON C.CostumerCod=FH.CostumerId
+--INNER JOIN Personels AS PE ON PE.PersonelCod=FH.PersonelId
+--INNER JOIN Products AS P ON P.Id=FD.ProductId
+--INNER JOIN ProductCategory AS PC ON PC.ID=P.CategoryId 
+--INNER JOIN ProductUnit AS PU ON PU.ID=P.UnitId
+--INNER JOIN Supliers  AS S ON S.Id=P.SuplierId
+--INNER JOIN Countrys AS CO ON CO.Id=S.CountryId
+--INNER JOIN Citys AS CI ON CO.Id=CI.CountryId
+
+-----------------------Report_Category_MonthSale-------------------
+--USE [Store]
+--GO 
+--CREATE VIEW Vw_Category_MonthSale
+--AS
+--SELECT CA.Name AS CATEGORY ,P.Name AS Productname , YEAR  ( fh.RequareDate ) AS YEARS ,
+--                   MONTH ( fh.RequareDate ) AS MONTHS, 
+--                   SUM(FD.ProductINumber),SUM(FD.EndPrise) AS SaleProduct ,
+--                   SUM(FD.DiscauntPersent) AS TotalDiscount
+--FROM  FactorHeader AS FH
+--INNER JOIN  FactorDitail AS FD ON FH.Id=FD.FactorHeaderId
+--INNER JOIN Products AS P ON FD.ProductId=P.Id
+--INNER JOIN ProductCategory AS CA ON P.CategoryId=CA.Id
+--GROUP BY CA.Name,P.Name,YEAR  ( fh.RequareDate ),MONTH ( fh.RequareDate )
+--ORDER BY YEARS,MONTHS DESC OFFSET 0 ROW
+----------------------TOP10_SALE-------------------------------
+--USE [Store]
+--GO 
+--CREATE VIEW Vw_Top10_Sale
+--AS
+--SELECT    P.Id,CA.Name AS Category,P.Name, 
+--		  COUNT(DISTINCT Fh.Id) AS FactorNamber,SUM(FD.ProductINumber) AS TotalNamber ,
+--          sum(FD.EndPrise) as totalprice
+--FROM FactorHeader AS FH 
+--INNER JOIN FactorDitail AS FD ON FH.Id=FD.FactorHeaderId
+--INNER JOIN PRODUCTS AS P ON FD.ProductId=P.Id
+--INNER JOIN ProductCategory AS CA ON P.CategoryId=CA.Id
+--GROUP BY    P.Id,P.Name,CA.Name
+--ORDER BY TotalNamber  DESC OFFSET 0 ROW
+---------------------------Repot_Topspent_Customer---------------------
+--USE [Store]
+--GO 
+--CREATE VIEW Vw_Topspent_Customer
+--AS
+--SELECT   Fh.CostumerId,c.LastName,COUNT(DISTINCT FD.FactorHeaderId) AS SumFactor,SUM(FD.EndPrise) AS SumSpent,
+--RANK() OVER (ORDER BY  SUM(FD.EndPrise) DESC) AS RankingCustomer
+--FROM FactorHeader AS FH 
+--INNER JOIN FactorDitail AS FD ON FH.Id=FD.FactorHeaderId
+--INNER JOIN Costumers AS C ON Fh.CostumerId=C.CostumerCod
+
+--GROUP BY   Fh.CostumerId,c.LastName
+ -------------------------Report_Product_State-----------------------------
+--USE [Store]
+--GO 
+-- CREATE VIEW Vw_Product_State
+-- AS 
+-- select P.Id,P.Name,CA.Name AS Category ,P.MinStock,P.MaxStock,SUM (FD.ProductINumber) AS SaleCount,
+--case
+--    WHEN SUM (FD.ProductINumber) > P.MaxStock THEN 'OverSale'
+--	WHEN SUM (FD.ProductINumber) < P.MinStock THEN 'LowSale'
+--	ELSE 'Normal'
+--END AS ProduktState
+
+--from Products AS P 
+--LEFT JOIN FactorDitail AS FD ON P.Id=FD.FactorHeaderId
+--LEFT JOIN ProductCategory AS CA ON P.CategoryId=CA.Id
+--GROUP BY P.Id,P.Name,CA.Name  ,P.MinStock,P.MaxStock
+
+---------------------------------Report__Sale_Info------------------------------
+--CREATE VIEW Vw_Sale_Info
+--AS 
+--SELECT  FH.CostumerId, CONCAT(C.FirstName,' ', C.LastName),CI.Name AS City,YEAR(FH.RequareDate) AS SaleYear,
+--MONTH(FH.RequareDate) AS SaleMonth,FH.[Description] ,
+--P.Id,P.Name,CA.Name AS Category,  FD.FactorHeaderId  AS FactorNamber,SUM(FD.ProductINumber) AS ProductNamber,
+--SUM(FD.EndPrise) AS Totalspend
+--FROM Products AS P
+--INNER JOIN FactorDitail AS FD ON P.Id=FD.ProductId
+--INNER JOIN FactorHeader AS FH ON FD.FactorHeaderId=FH.Id
+--LEFT JOIN Costumers AS C ON FH.CostumerId=C.CostumerCod
+--INNER JOIN Citys AS CI ON C.CityId=CI.Id
+--INNER JOIN ProductCategory AS CA ON P.CategoryId=CA.Id
+--GROUP BY C.LastName,CI.Name,FH.RequareDate, FH.CostumerId , FH.[Description],
+--P.Id,P.Name,CA.Name,FD.FactorHeaderId  

@@ -1,0 +1,114 @@
+--USE [master] 
+
+--CREATE DATABASE Store
+-- CONTAINMENT = NONE
+-- ON  PRIMARY 
+--( NAME = N'Store', FILENAME = N'G:\DATABASE\Store\Store.mdf' , SIZE = 10240KB ,MAXSIZE= UNLIMITED, FILEGROWTH = 65536KB )
+-- LOG ON 
+--( NAME = N'Store_log', FILENAME = N'G:\DATABASE\Store\Store_log.ldf' , SIZE = 8192KB ,MAXSIZE= UNLIMITED ,FILEGROWTH = 65536KB )
+ 
+--GO
+--ALTER DATABASE [Store] SET  READ_WRITE 
+--GO
+--ALTER DATABASE [Store] SET RECOVERY FULL 
+--GO
+--ALTER DATABASE [Store] SET  MULTI_USER 
+--GO
+--ALTER DATABASE [Store] SET PAGE_VERIFY CHECKSUM  
+--GO
+----CREATE SCHEMA 
+USE [Store]
+GO
+CREATE TABLE  ProductCategory 
+(	Id SMALLINT PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(500),
+	Description NVARCHAR(1500) 
+);
+
+CREATE TABLE ProductUnit 
+(	Id SMALLINT PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(500),
+	Description NVARCHAR(1500)
+);
+CREATE TABLE Countrys
+(   Id SMALLINT PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(500),
+	Description NVARCHAR(1500)
+);
+CREATE TABLE Citys
+(  Id SMALLINT PRIMARY KEY IDENTITY(1,1),
+   CountryId SMALLINT NOT NULL  CONSTRAINT FK_Citys_Countrys  FOREIGN KEY REFERENCES  Countrys(Id),
+   Name NVARCHAR(500),
+   Description NVARCHAR(1500)
+
+);
+CREATE TABLE Supliers
+(   Id INT PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(150),
+	CountryId SMALLINT NOT NULL  CONSTRAINT FK_SuplierS_Countrys  FOREIGN KEY REFERENCES  Countrys(Id),
+	CityId SMALLINT NOT NULL  CONSTRAINT FK_SuplierS_Citys  FOREIGN KEY REFERENCES  Citys(Id),
+	Phone  CHAR(11) NOT NULL  ,
+	Adress NVARCHAR(150)
+	--, TitleId SMALLINT NOT NULL  CONSTRAINT FK_SuplierS_Titles  FOREIGN KEY REFERENCES  Titles(Id),
+);
+CREATE TABLE Personels
+(	PersonelCod  INT PRIMARY KEY IDENTITY(1,1),
+	FirstName NVARCHAR(500),
+	LasttName NVARCHAR(500),
+	Gender BIT DEFAULT 1  , 
+	BirthDay DATE NOT NULL  CONSTRAINT CK_BirthDay CHECK (  YEAR(BirthDay)<GETDATE()  AND LEN(BirthDay)=10   ),
+	NationalCode CHAR(10) UNIQUE NOT NULL,
+	Phone CHAR(11) UNIQUE NOT NULL  ,
+	Adress NVARCHAR(150)
+	
+);
+CREATE TABLE Products
+(   Id  INT NOT NULL  PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(500),
+	Description NVARCHAR(1500),
+	CategoryId SMALLINT NOT NULL  CONSTRAINT FK_Products_ProductCategory FOREIGN KEY REFERENCES ProductCategory(Id),
+	UnitId SMALLINT NOT NULL  CONSTRAINT FK_Products_ProductUnit FOREIGN KEY REFERENCES ProductUnit(Id),
+	SuplierId INT NOT NULL  CONSTRAINT FK_Products_Supliers FOREIGN KEY REFERENCES Supliers(Id),
+    PersonelId INT NOT NULL  CONSTRAINT FK_Products_Personels FOREIGN KEY REFERENCES Personels(PersonelCod),
+	MinStock INT CHECK (MinStock> 0),
+	MaxStock INT,
+	UserId  INT,
+	InsertDay DATE DEFAULT GETDATE(),
+	Stats BIT  CONSTRAINT CK_Gender CHECK (Stats IN(0,1)) DEFAULT 1 --ÂËÃËœ 1 Ê«ÂËÃËœ0
+ 
+);
+CREATE TABLE Costumers
+(   CostumerCod INT NOT NULL   PRIMARY KEY IDENTITY(1,1),
+	FirstName NVARCHAR(500),
+	LasttName NVARCHAR(500),
+	Phone CHAR(11) UNIQUE NOT NULL ,
+	CountryId SMALLINT NOT NULL  CONSTRAINT FK_Costumers_Countrys  FOREIGN KEY REFERENCES  Countrys(Id),
+	CityId SMALLINT NOT NULL  CONSTRAINT FK_Costumers_Citys  FOREIGN KEY REFERENCES  Citys(Id),
+	Adress NVARCHAR(150)
+	);
+
+CREATE TABLE FactorHeader
+(	Id INT NOT NULL   PRIMARY KEY IDENTITY(1,1),
+	CostumerId INT NOT NULL  CONSTRAINT FK_FactorHeader_Costumers  FOREIGN KEY REFERENCES  Costumers(CostumerCod),
+	PersonelId INT NOT NULL  CONSTRAINT FK_FactorHeader_Personels  FOREIGN KEY REFERENCES  Personels(PersonelCod),
+	RequareDate DateTIME,
+	Description NVARCHAR(1500)
+
+	);
+CREATE TABLE FactorDitail
+(	
+	FactorHeaderId INT NOT NULL  CONSTRAINT FK_FactorDitail_FactorHeader  FOREIGN KEY REFERENCES  FactorHeader (Id),
+	ProductId INT NOT NULL  CONSTRAINT FK_FactorDitail_Products  FOREIGN KEY REFERENCES   Products(Id),
+	PRIMARY KEY (FactorHeaderId,ProductId),
+	UnitPrice INT NOT NULL,
+	ProductINumber SMALLINT NOT NULL,
+	DiscauntPersent NUMERIC(18,2),
+	EndPrise AS (UnitPrice*ProductINumber)*(1-DiscauntPersent)			
+
+);
+
+--CREATE TABLE Orders
+--(   Id INT PRIMARY KEY IDENTITY(1,1),
+--	FactorDitailId INT NOT NULL  CONSTRAINT FK_Orders_FactorDitail  FOREIGN KEY REFERENCES  FactorDitail(Id),
+--	ProductId INT NOT NULL  CONSTRAINT FK_Orders_Products  FOREIGN KEY REFERENCES   Products(Id)
+--);

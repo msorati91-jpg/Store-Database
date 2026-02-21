@@ -1,0 +1,261 @@
+﻿----1.1========================================SaleReport=================================================
+----products
+----years
+----months
+----costumers
+----contry
+--ALTER PROCEDURE SP_SaleReport @Year CHAR(4),@Month CHAR(2)
+--AS
+--BEGIN
+--	--========================SaleReport-Product
+--	SELECT LEFT(FH.FactDate,4) AS YEAR,SUBSTRING(FH.FactDate,6,2) AS MONTH,PC.CatCode,PC.CatDesc,P.ProductCode,P.ProductDesc 
+--	,COUNT(distinct(fd.FactNo)) AS FactorCount
+--	,SUM( FD.Qty) AS TotalQuantity
+--	,SUM(FD.Price) AS MonthSALE
+--	,sum(FD.DiscountPercent*FD.Price) AS Discount
+--	,(SUM(FD.Price)-sum(FD.DiscountPercent*FD.Price)) AS khalesiSale
+--	FROM FactHeader AS FH 
+--	INNER JOIN FactDetail AS FD ON FH.FactNo=FD.FactNo
+--	RIGHT JOIN Products AS P ON FD.ProductCode=P.ProductCode
+--	INNER JOIN ProductCategory AS PC ON P.CatCode=PC.CatCode
+--	WHERE LEFT(FH.FactDate,4)=CASE WHEN @Year ='' THEN LEFT(FH.FactDate,4) ELSE @Year END
+--	AND   SUBSTRING(FH.FactDate,6,2)=CASE WHEN @Month ='' THEN SUBSTRING(FH.FactDate,6,2) ELSE @Month END  
+--	GROUP BY LEFT(FH.FactDate,4),SUBSTRING(FH.FactDate,6,2),PC.CatCode,PC.CatDesc,P.ProductCode,P.ProductDesc 
+--	ORDER BY PC.CatCode,P.ProductCode OFFSET 0 ROWS;
+--	--=============================SaleReport-Total-In-Month
+--	SELECT LEFT(FH.FactDate,4) AS YEAR,SUBSTRING(FH.FactDate,6,2) AS MONTH
+--	,COUNT(DISTINCT(FD.FactNo)) AS FactorCount
+--	,COUNT(DISTINCT(FH.CustomerCode)) AS CustomerCount
+--	,SUM( FD.Qty) AS TotalQuantity
+--	,SUM(FD.Price) AS MonthSALE
+--	,sum(FD.DiscountPercent*FD.Price) AS Discount
+--	,(SUM(FD.Price)-sum(FD.DiscountPercent*FD.Price)) AS khalesiSale
+--	FROM FactHeader AS FH 
+--	INNER JOIN FactDetail AS FD ON FH.FactNo=FD.FactNo
+--	WHERE LEFT(FH.FactDate,4)=CASE WHEN @Year ='' THEN LEFT(FH.FactDate,4) ELSE @Year END
+--	AND   SUBSTRING(FH.FactDate,6,2)=CASE WHEN @Month ='' THEN SUBSTRING(FH.FactDate,6,2) ELSE @Month END 
+--	GROUP BY LEFT(FH.FactDate,4),SUBSTRING(FH.FactDate,6,2)
+--	ORDER BY LEFT(FH.FactDate,4),SUBSTRING(FH.FactDate,6,2) OFFSET 0 ROWS;
+--	--=============================SaleReport-Total-In-Year
+--	SELECT LEFT(FH.FactDate,4) AS YEAR 
+--	,COUNT(DISTINCT(FD.FactNo)) AS FactorCount
+--	,COUNT(DISTINCT(FH.CustomerCode)) AS CustomerCount
+--	,sum( FD.Qty) AS TotalQuantity
+--	,SUM(FD.Price) AS YearSALE
+--	,sum(FD.DiscountPercent*FD.Price) AS Discount
+--	,(SUM(FD.Price)-sum(FD.DiscountPercent*FD.Price)) AS khalesiSale
+--	FROM FactHeader AS FH 
+--	INNER JOIN FactDetail AS FD ON FH.FactNo=FD.FactNo
+--	WHERE LEFT(FH.FactDate,4)=CASE WHEN @Year ='' THEN LEFT(FH.FactDate,4) ELSE @Year END
+--	GROUP BY LEFT(FH.FactDate,4) 
+--	ORDER BY LEFT(FH.FactDate,4) OFFSET 0 ROWS;
+--END
+--	--EXEC SP_SaleReport '1402','12'
+----	SELECT * FROM Products
+----1.2.1=========================VIEW-MojudiAnbar
+--CREATE VIEW V_MojudiAnbar
+--AS
+--	SELECT PC.CatCode,PC.CatDesc,P.ProductCode,P.ProductDesc,PU.UnitDesc,S.CompanyName,P.MinStock, P.MaxStock,SUM(FD.Qty) AS SaleCount,
+--	  CASE WHEN SUM(FD.Qty) BETWEEN P.MinStock AND P.MaxStock THEN  CONVERT(CHAR(10),(P.MaxStock-SUM(FD.Qty)) )+':'+N'تعداد کالای باقی مانده'
+--			WHEN SUM(FD.Qty) =P.MaxStock THEN N'موجودي اين کالا به اتمام رسيده است'
+--			WHEN SUM(FD.Qty) >P.MaxStock THEN  N'بیشتر از موجودی به فروش رسیده'
+--			ELSE  CONVERT(CHAR(10),P.Minstock) +':'+N'تعداد کالای باقی مانده' 
+--			END
+--		   AS StatusDescription
+--	FROM Products AS P 
+--	LEFT JOIN FactDetail AS FD ON P.ProductCode=FD.ProductCode
+--	LEFT JOIN ProductCategory AS PC ON P.CatCode=PC.CatCode
+--	LEFT JOIN ProductUnit AS PU ON P.UnitCode=PU.UnitCode
+--	LEFT JOIN Suppliers AS S ON S.SupplierCode=P.SupplierCode
+--	GROUP BY PC.CatCode,PC.CatDesc,P.ProductCode,P.ProductDesc,PU.UnitDesc,S.CompanyName,P.MinStock, P.MaxStock
+--	ORDER BY PC.CatCode,P.ProductCode offset 0 rows
+--	  --select * from V_MojudiAnbar
+--	  ----	SELECT * FROM Products
+------1.2.2=========================Function-MojudiAnbar
+--CREATE FUNCTION FN_TotalValue ()
+--RETURNS DECIMAL(18,2)
+--AS 
+--BEGIN
+--	DECLARE @TotalValue  DECIMAL(18,2);
+--	SELECT  @TotalValue=SUM(FD.Fee*(P.MaxStock-(FD.Qty)))
+--	FROM Products AS P 
+--	LEFT JOIN FactDetail AS FD ON P.ProductCode=FD.ProductCode
+--	RETURN ISNULL(@TotalValue,0)
+--END
+--GO
+----1.3========================CustumersReport
+--ALTER PROCEDURE SP_CustumersReport @top int  ,@fromDate CHAR(10)=NULL,@ToDate CHAR(10)=NULL
+--AS
+--BEGIN
+--		IF @fromDate IS NULL SET @fromDate=DATEADD(YEAR,-1,GETDATE())
+--		IF @ToDate IS NULL SET @ToDate=GETDATE()
+		
+
+--		SELECT TOP(@top) CO.CountryCode,CO.CountryDesc,CI.CityDesc,C.CustomerCode,C.CompanyName,
+--		ISNULL(COUNT(FH.FactNo),0)  AS FactorCount,
+--		ISNULL(SUM(Price),0) AS TotalSpent ,
+--		RANK() OVER (ORDER BY  SUM(Price) DESC) AS Ranking 
+--		FROM FactHeader AS FH
+--		INNER JOIN FactDetail AS FD ON FH.FactNo=FD.FactNo
+--		RIGHT JOIN Customers AS C ON FH.CustomerCode=C.CustomerCode
+--		RIGHT JOIN Country AS CO ON C.CountryCode=CO.CountryCode
+--		RIGHT JOIN City AS CI ON C.CityCode=CI.CityCode
+--		WHERE FH.FactDate BETWEEN @fromDate  AND @ToDate
+--		GROUP BY CO.CountryCode,CO.CountryDesc,CI.CityDesc,C.CustomerCode,C.CompanyName
+--		ORDER BY  TotalSpent DESC 
+--END
+
+	--EXEC SP_CustumersReport  20,'1400.01.01','1402.01.02' 
+
+
+--2.1========================SabtSefaresh========================================
+-- CREATE TABLE Status
+-- ( StatusId TINYINT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+--   StatusName NVARCHAR(50) NOT NULL,
+--   StatusDesc NVARCHAR(200) NOT NULL)
+----exec sp_rename 'DBO.STATES.StateId','StatusId','COLUMN'
+----exec sp_rename 'DBO.STATES.StateName','StatusName','COLUMN'
+----exec sp_rename 'DBO.STATES.StateDesc','StatusDesc','COLUMN'
+----exec sp_rename 'FCT.FactHeader.StateId','StatusId','COLUMN'
+----------------------------------
+--INSERT INTO Status (StatusName,StatusDesc)
+--VALUES	 (N'ثبت شده',N'سفارش ثبت شده ولی پرداخت نشده است')
+--		,(N'پرداخت شده',N'سفارش پرداخت شده و در انتظار اماده سازی است')
+--		,(N'درحال اماده سازی',N'سفارش درحال اماده سازی برای ارسال است')
+--		,(N'ارسال شده',N'سفارش ارسال شده است ولی تحویل مشتری نشده است')
+--		,(N'تحویل شده',N'سفارش به مشتری تحویل شده است')
+--		,(N'لغو شده',N'سفارش لغو شده است')
+---------------------------------
+--ALTER TABLE  FCT.FactHeader
+--    ADD StatusId TINYINT NOT NULL DEFAULT 1
+--	CONSTRAINT FK_FactHeader_Status FOREIGN KEY REFERENCES Status(StatusId)
+---------------------------------
+--UPDATE FactHeader 
+-- SET StatusId = CASE WHEN RequiredDate IS NULL THEN 1
+--			 WHEN RequiredDate IS NOT NULL AND Miladi_TransferDate IS  NULL   THEN 2
+--			 WHEN Miladi_TransferDate IS NOT NULL THEN 4
+--			 ELSE 6 
+--			 END  			
+--FROM FactHeader AS FD 
+----====================================SP_SabtSefaresh================================================
+-- =============================================
+-- Author:		<Bayat,Mahnaz>
+-- Create date: <2026.01.20>
+-- Description:	<Create_NewOrder>
+-- =============================================
+--ALTER PROCEDURE SP_Create_NewOrder @CustomerCode VARCHAR(10),@UserId INT,@Description NVARCHAR(200)=NULL
+--AS
+--BEGIN
+--	DECLARE @FACTNO INT
+--BEGIN TRY	
+--	BEGIN TRANSACTION
+--	INSERT INTO FactHeader (  [FactDate], [RequiredDate], [CustomerCode],[UserId],[Description], [StatusId] )
+--	VALUES (GETDATE(),DATEADD(DAY,7,GETDATE()),@CustomerCode,@UserId ,@Description,1)
+--	SET @FACTNO=SCOPE_IDENTITY()
+--	COMMIT TRANSACTION
+--	SELECT @FACTNO AS NewOrderNumber ,'Order Create successfully.Status: ثبت شده' AS MESSAGE
+--END TRY
+--BEGIN CATCH
+--	IF @@TRANCOUNT > 0
+--		ROLLBACK TRANSACTION
+--	SELECT 0 AS NewOrderNumber ,'ERROR Create Order  .Status: '+ ERROR_MESSAGE() AS MESSAGE
+--END CATCH
+--END
+----EXEC SP_Create_NewOrder  'VINET',102,',N,NL.'
+----SELECT * FROM DBO.MILADITOSHAMSI
+----2.2========================================SP_AddSefaresh================================================
+-- =============================================
+-- Author:		<Bayat,Mahnaz>
+-- Create date: <2026.01.20>
+-- Description:	<AddItemToOrder>
+-- =============================================
+--CREATE PROCEDURE SP_AddItemToOrder @FactNo INT ,@ProductCode INT,@Fee DECIMAL(18,2),@Qty INT,@DiscountPercent DECIMAL(5,2)  
+--AS
+--DECLARE @DiscountPrice  DECIMAL(18,2) SET @DiscountPrice =@DiscountPercent*@Fee*@Qty 
+--BEGIN
+--	BEGIN TRY
+--		IF EXISTS(SELECT 1 FROM FactHeader WHERE FactNo=@FactNo AND StatusId>2)
+--		BEGIN
+--			SELECT 0 AS SUCCESS ,'Can Not Add Item  To Order  .Status: Order Is Not Editable ' AS MESSAGE 
+--			RETURN
+--		END
+--		BEGIN TRANSACTION
+--			INSERT INTO FactDetail([FactNo], [ProductCode], [Fee], [Qty], [DiscountPercent] , [DiscountPrice])
+--			VALUES(@FactNo,@ProductCode,@Fee,@Qty,@DiscountPercent ,@DiscountPrice)
+--			COMMIT TRANSACTION
+--			SELECT @FACTNO AS SUCCESS ,'Item Add To Order successfully.Status: ثبت شده' AS MESSAGE
+--	END TRY
+--	BEGIN CATCH
+--		IF @@TRANCOUNT>0
+--			ROLLBACK TRANSACTION
+--		SELECT 0 AS SUCCESS ,'ERROR Item Add To Order  .Status: '+ ERROR_MESSAGE() AS MESSAGE
+--	END CATCH
+--END
+----2.1========================ChengeStats===============================================================
+--ALTER PROCEDURE SP_ChengeStats @FactNo INT,@NewStatusId TINYINT
+--AS
+--BEGIN
+--		DECLARE @CurrentStatusId TINYINT SELECT @CurrentStatusId=StatusId FROM FactHeader WHERE FactNo=@FactNo
+--		DECLARE @StatusName TINYINT SELECT @StatusName=@StatusName FROM FactHeader WHERE FactNo=@FactNo
+--		BEGIN TRY
+--		IF @CurrentStatusId>4 --??AND @NewStatusID <> @CurrentStatusID
+--		BEGIN
+--			SELECT 0 AS SUCCESS ,'Can Not Change Status .Status: Order Is Not Editable ' AS MESSAGE 
+--			RETURN
+--		END
+--		IF @CurrentStatusId>@NewStatusId --??AND @NewStatusID NOT IN (1, 6)
+--		BEGIN
+--			SELECT 0 AS SUCCESS ,'Can Not  Reverse to previous Status .Status: Order Is Not Reversable ' AS MESSAGE 
+--			RETURN
+--		END
+--		BEGIN TRANSACTION
+--			UPDATE FactHeader	SET StatusId=@NewStatusId FROM FactHeader	WHERE  FactNo=@FactNo
+--			IF @NewStatusId=4 UPDATE FactHeader	SET Miladi_TransferDate=GETDATE() FROM FactHeader	WHERE  FactNo=@FactNo
+--			IF @NewStatusId=5 UPDATE FactHeader	SET Miladi_RequiredDate=GETDATE() FROM FactHeader	WHERE  FactNo=@FactNo
+--			COMMIT TRANSACTION
+--			SELECT @FACTNO AS SUCCESS ,'OrderStatus Change successfully To Status:' + @StatusName  AS MESSAGE
+
+--	END TRY
+--	BEGIN CATCH
+--		IF @@TRANCOUNT>0
+--			ROLLBACK TRANSACTION
+--		SELECT 0 AS SUCCESS ,'Error Changing OrderStatus: '+ ERROR_MESSAGE() AS MESSAGE
+--	END CATCH
+--END
+
+----2.2========================OrderDeliveryPerformanceReport
+--ALTER VIEW V_OrderDeliveryPerformance
+--AS
+--WITH  DayTransfer AS (	 SELECT FH.FactNo,FH.FactDate,DATEADD(DAY,7,FH.Miladi_FactDate) AS DayTransfer
+--						 ,FH.Miladi_FactDate,FH.Miladi_TransferDate,FH.CustomerCode,C.CompanyName,
+--						  CO.CountryCode,CO.CountryDesc,CI.CityCode,CI.CityDesc,S.StatusId,S.StatusName
+--						FROM FactHeader AS FH
+--						INNER JOIN Customers AS C ON FH.CustomerCode=C.CustomerCode
+--						INNER JOIN Country AS CO ON C.CountryCode=CO.CountryCode
+--						INNER JOIN City AS CI ON C.CityCode=CI.CityCode
+--						INNER JOIN STATES AS S ON S.StatusId=FH.StatusId
+--						)
+--	SELECT D.*,
+--	CASE WHEN FH.Miladi_TransferDate=DayTransfer THEN'SEND ON TIME'
+--		 WHEN FH.Miladi_TransferDate>DayTransfer THEN'SEND '+CONVERT(VARCHAR(200),DATEDIFF(DAY,DayTransfer,FH.Miladi_TransferDate),100 )+' Days LATER'
+--		 WHEN FH.Miladi_TransferDate<DayTransfer THEN'SEND EARLIER'
+--		 WHEN FH.StatusId IN (1,2) THEN  N'فرایند در جریان است'
+--		 ELSE 'NOT SEND YET'
+--		 END AS OrderDeliveryStatus
+--		 FROM DayTransfer AS D 
+--		 INNER JOIN FactHeader AS FH ON D.FactNo=FH.FactNo
+----SELECT * FROM V_OrderDeliveryPerformance WHERE StatusId IN (4,5)
+-- --2.2.2===================================F_AvgTransferTime=====================================================
+-- ALTER FUNCTION F_AvgTransferTime ()
+-- RETURNS  DECIMAL(10,2)
+-- AS 
+-- BEGIN
+--	DECLARE @AvgTransferTime DECIMAL(10,2)
+--	SELECT  @AvgTransferTime=AVG(DATEDIFF(DAY,FH.Miladi_TransferDate,DATEADD(DAY,7,Miladi_FactDate)))	
+--	FROM  FactHeader AS FH
+--	WHERE StatusId IN (4,5)
+--	GROUP BY FH.FactNo
+--	RETURN ISNULL(@AvgTransferTime,0)
+--END
+--GO
+----SELECT *,DBO.F_AvgTransferTime () FROM FactHeader	
