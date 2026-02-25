@@ -1,4 +1,3 @@
-
 --====================================INDEX====================================
 USE [Store]
 CREATE INDEX IX_ProductImage_ProductId ON ProductImage(ProductId);

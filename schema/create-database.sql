@@ -1,4 +1,4 @@
---===============Create Database===================
+--=================Create Database===================
 USE [master] 
 
 CREATE DATABASE Store

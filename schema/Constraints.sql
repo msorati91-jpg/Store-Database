@@ -1,4 +1,4 @@
---========================constraints===========================
+--==========================constraints===========================
 USE [Store]
 
 ALTER TABLE City  ADD CONSTRAINT FK_City_Country FOREIGN KEY (CountryId) REFERENCES  Country(Id)

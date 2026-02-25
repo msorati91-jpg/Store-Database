@@ -1,4 +1,4 @@
---==========================Create Tables===================
+--============================Create Tables===================
 USE [Store]
 GO
 CREATE TABLE Country
