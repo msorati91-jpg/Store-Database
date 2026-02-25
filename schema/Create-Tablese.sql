@@ -1,0 +1,162 @@
+--==========================Create Tables===================
+USE [Store]
+GO
+CREATE TABLE Country
+(   Id SMALLINT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(100)  NOT NULL
+);
+CREATE TABLE City
+(  Id SMALLINT NOT NULL PRIMARY KEY IDENTITY(1,1),
+   CountryId SMALLINT NOT NULL,
+   Name NVARCHAR(50) NOT NULL
+ );
+ CREATE TABLE Address
+ ( Id INT NOT NULL PRIMARY KEY IDENTITY(1,1) ,
+   CityId SMALLINT NOT NULL,
+   Street NVARCHAR(50) NOT NULL,
+   HauseNumber TINYINT NULL,
+   ExtraInfo  NVARCHAR(300) NULL,
+   PostalCode NVARCHAR(20) NOT NULL
+ )
+CREATE TABLE Supplier
+(   Id INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(200),
+	Phone  CHAR(11) NOT NULL ,
+	AddressId INT NOT NULL 
+);
+CREATE TABLE Personnel
+(	PersonnelCod  INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	FirstName NVARCHAR(50) NOT  NULL,
+	LastName NVARCHAR(50) NOT  NULL,
+	Gender BIT NULL  , 
+	BirthDay DATE NULL  ,
+	NationalCode CHAR(10) UNIQUE NOT NULL,
+	Phone CHAR(11) UNIQUE NOT NULL  ,
+	AddressId INT NOT NULL,
+	IsDeleted BIT
+);
+CREATE TABLE PersonnelAudit
+(	Id INT NOT NULL  PRIMARY KEY IDENTITY(1,1),
+	PersonnelId INT NOT NULL ,
+	OldPhone CHAR(11)  NOT NULL ,
+	NewPhone CHAR(11)  NOT NULL ,
+	OldAddressId INT NOT NULL,
+	NewAddressId INT NOT NULL,
+	ChangeBy INT NOT NULL , 
+	ChangeDate DATETIME2 NOT NULL
+);
+CREATE TABLE Customer
+(   CustomerCod INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	FirstName NVARCHAR(50) NOT  NULL,
+	LastName NVARCHAR(50) NOT  NULL,
+	Email NVARCHAR(50) UNIQUE NOT NULL,
+	Phone CHAR(11) UNIQUE NOT NULL ,
+	AddressId INT NOT NULL,
+	IsDeleted BIT
+);
+CREATE TABLE CustomerAudit
+(	Id INT NOT NULL  PRIMARY KEY IDENTITY(1,1),
+	CustomerId INT NOT NULL,
+	OldEmail NVARCHAR(50) NULL,
+	NewEmail NVARCHAR(50) NULL,
+	OldPhone CHAR(11)  NOT NULL ,
+	NewPhone CHAR(11)  NOT NULL ,
+	OldAddressId INT NOT NULL,
+	NewAddressId INT NOT NULL,
+	ChangeBy INT NOT NULL , 
+	ChangeDate DATETIME2 NOT NULL
+);
+CREATE TABLE ProductCategory 
+(	Id SMALLINT NOT NULL  PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(50) NOT NULL,
+	Description NVARCHAR(1000) NULL
+);
+CREATE TABLE ProductUnit 
+(	Id SMALLINT PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(50) NOT NULL,
+	Description NVARCHAR(1000) NULL
+);
+CREATE TABLE Product
+(   Id  INT NOT NULL PRIMARY KEY IDENTITY(1,1) ,
+	Name NVARCHAR(50),
+	Description NVARCHAR(1500),
+	CategoryId SMALLINT NOT NULL, 
+	UnitId SMALLINT NOT NULL , 
+	SupplierId INT NOT NULL , 
+	Currentprice DECIMAL(18,2) NOT NULL ,
+   	MinStock INT ,
+	MaxStock INT,
+	IsActive BIT  ,
+	CreatedAt DATETIME ,
+    ImageId INT ,
+	IsDeleted BIT
+);
+CREATE TABLE ProductAudit
+(  	Id  INT NOT NULL PRIMARY KEY IDENTITY(1,1) ,
+	ProductId  INT NOT NULL,
+	Oldprice INT NOT NULL ,
+	Newprice INT NOT NULL ,
+	OldSupplierId INT NOT NULL ,
+	NewSupplierId INT NOT NULL , 
+    OldImageId INT ,
+	NewImageId INT ,
+	ChangeBy INT NOT NULL , 
+	ChangeDate DATETIME2 NOT NULL
+);
+CREATE TABLE ProductStock
+(   Id INT NOT NULL PRIMARY KEY IDENTITY(1,1) ,
+	ProductId INT NOT NULL, 
+	Quantity INT NOT NULL,
+	LastUpdate DATETIME NOT NULL
+);
+CREATE TABLE ProductImage
+( 	Id INT NOT NULL PRIMARY KEY IDENTITY(1,1) ,
+	ProductId INT NOT NULL,
+	ImageFile VARBINARY(MAX)  FILESTREAM ,
+	--ThumbNail VARBINARY(MAX) ,
+	IsMainImage BIT NOT NULL ,
+	SortOrder INT NOT NULL,
+	RowGuid UNIQUEIDENTIFIER ROWGUIDCOL NOT NULL UNIQUE  ,
+	CreatedAt DATETIME2 NOT NULL 
+)ON [PRIMARY] FILESTREAM_ON FG_FILESTREAM
+CREATE TABLE FactorStatus
+(	Id TINYINT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	Name NVARCHAR(50)  NOT NULL 
+);
+CREATE TABLE FactorHeader
+(	Id  TINYINT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	CreatedAt DATETIME2 NOT NULL ,
+	CustomerId INT NOT NULL , 
+	PersonnelId INT NOT NULL , 
+	Description NVARCHAR(1500) NULL,
+	StatusId TINYINT NOT NULL
+);
+CREATE TABLE FactorStatusHistory
+(	Id INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	FactorHeaderId  INT NOT NULL ,
+	StatusId TINYINT NOT NULL ,
+	StatusDate DATETIME  NOT NULL 
+);
+CREATE TABLE FactorDetail
+(	FactorHeaderId INT NOT NULL , 
+	ProductId INT NOT NULL,
+	Quantity SMALLINT NOT NULL,
+	UnitPrice DECIMAL(18,2) NOT NULL,
+	DiscountPercent DECIMAL(5,2) NOT NULL  ,
+	DiscountAmount AS (
+		UnitPrice*CAST(Quantity AS DECIMAL(18,2))*CAST(DiscountPercent AS DECIMAL(18,2)) 
+		)PERSISTED ,
+	SubTotal AS	(
+		UnitPrice*CAST(Quantity AS DECIMAL(18,2))*(1-DiscountPercent)
+		) PERSISTED,
+	TaxPercent DECIMAL(5,2) NOT NULL,
+	TaxAmount AS (
+		UnitPrice*CAST(Quantity AS DECIMAL(18,2))*(1-DiscountPercent)* TaxPercent
+		) PERSISTED,
+	lineTotal AS (
+		(UnitPrice*CAST(Quantity AS DECIMAL(18,2))*(1-DiscountPercent))
+		+
+		(UnitPrice*CAST(Quantity AS DECIMAL(18,2))*(1-DiscountPercent)* TaxPercent)
+		) PERSISTED,
+	PRIMARY KEY (FactorHeaderId, ProductId)
+);
