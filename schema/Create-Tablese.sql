@@ -84,8 +84,9 @@ CREATE TABLE Product
 	UnitId SMALLINT NOT NULL , 
 	SupplierId INT NOT NULL , 
 	Currentprice DECIMAL(18,2) NOT NULL ,
-   	MinStock INT ,
-	MaxStock INT,
+   	MinStock INT NOT NULL ,
+	MaxStock INT NOT NULL,
+	CurrentStock INT NOT NULL ,
 	IsActive BIT  ,
 	CreatedAt DATETIME ,
     ImageId INT ,
@@ -107,6 +108,7 @@ CREATE TABLE ProductStock
 (   Id INT NOT NULL PRIMARY KEY IDENTITY(1,1) ,
 	ProductId INT NOT NULL, 
 	Quantity INT NOT NULL,
+	ChangeType BIT NOT NULL,
 	LastUpdate DATETIME NOT NULL
 );
 CREATE TABLE ProductImage
@@ -124,14 +126,14 @@ CREATE TABLE FactorStatus
 	Name NVARCHAR(50)  NOT NULL 
 );
 CREATE TABLE FactorHeader
-(	Id  TINYINT NOT NULL PRIMARY KEY IDENTITY(1,1),
+(	Id INT NOT NULL PRIMARY KEY IDENTITY(1,1),
 	CreatedAt DATETIME2 NOT NULL ,
 	CustomerId INT NOT NULL , 
 	PersonnelId INT NOT NULL , 
 	Description NVARCHAR(1500) NULL,
 	StatusId TINYINT NOT NULL
 );
-CREATE TABLE FactorStatusHistory
+CREATE TABLE FactorStatusHistory 
 (	Id INT NOT NULL PRIMARY KEY IDENTITY(1,1),
 	FactorHeaderId  INT NOT NULL ,
 	StatusId TINYINT NOT NULL ,
