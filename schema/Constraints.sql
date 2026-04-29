@@ -35,10 +35,13 @@ ALTER TABLE Product ADD CONSTRAINT  FK_Product_ProductUnit FOREIGN KEY (UnitId) 
 ALTER TABLE Product ADD CONSTRAINT  FK_Product_Supplier FOREIGN KEY (SupplierId) REFERENCES Supplier(Id)
 ALTER TABLE Product ADD CONSTRAINT  FK_Product_ProductImage FOREIGN KEY (ImageId) REFERENCES ProductImage(Id)
 ALTER TABLE Product ADD DEFAULT (1) FOR IsActive 
+ALTER TABLE Product ADD DEFAULT (0) FOR CurrentStock
 ALTER TABLE Product ADD DEFAULT (GETDATE()) FOR CreatedAt
 ALTER TABLE Product ADD CONSTRAINT  CK_MinStock CHECK (MinStock > 0)
 ALTER TABLE Product ADD CONSTRAINT  CK_MaxStock CHECK (MaxStock>=MinStock )
 ALTER TABLE Product ADD DEFAULT (0) FOR IsDeleted 
+
+ALTER TABLE ProductStock ADD DEFAULT (0) FOR ChangeType
 
 ALTER TABLE ProductAudit ADD CONSTRAINT  FK_ProductAudit_Product FOREIGN KEY (ProductId) REFERENCES Product(Id)
 ALTER TABLE ProductAudit ADD CONSTRAINT  FK_ProductAudit_Personnel FOREIGN KEY (ChangeBy) REFERENCES Personnel(PersonnelCod)
@@ -66,5 +69,5 @@ ALTER TABLE FactorStatusHistory ADD CONSTRAINT FK_FactorStatusHistory_FactorStat
 ALTER TABLE FactorDetail  ADD CONSTRAINT FK_FactorDetail_FactorHeader  FOREIGN KEY (FactorHeaderId) REFERENCES  FactorHeader (Id)  ON DELETE CASCADE
 ALTER TABLE FactorDetail  ADD CONSTRAINT FK_FactorDetail_Product  FOREIGN KEY (ProductId) REFERENCES   Product(Id)
 ALTER TABLE FactorDetail  ADD CONSTRAINT CK_DiscountPercent CHECK (DiscountPercent BETWEEN 0 AND 1)
-ALTER TABLE FactorDetail  ADD DEFAULT (9) FOR TaxPercent
+ALTER TABLE FactorDetail  ADD DEFAULT (0.09) FOR TaxPercent
 ALTER TABLE FactorDetail  ADD DEFAULT (0) FOR DiscountPercent 
