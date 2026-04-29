@@ -7,7 +7,6 @@ CREATE INDEX IX_Product_CategoryId ON Product(CategoryId);
 CREATE INDEX IX_Product_UnitId ON Product(UnitId);
 CREATE INDEX IX_FactorHeader_CustomerId ON FactorHeader (CustomerId) ;
 CREATE INDEX IX_FactorDetail_ProductId ON FactorDetail (ProductId) ;
-
 --==================
 INSERT INTO FactorStatus (name)
 VALUES
